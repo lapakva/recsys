@@ -95,16 +95,12 @@ def transfer(df:pd.DataFrame, with_lable=True, **kwargs) -> pd.DataFrame:
     for degree in sorted_degrees:
         talent_df[degree] = talent_df.degree.apply(lambda x: degree in x)
         
-    
-    # lets 
-    
-
+ 
     #add talent and job ids for model quality metrics calculation
     talent_df['talent_id'] = talent_df.index
     talent_df['talent_or_job'] = 'talent'
     talent_df['matched_job_id'] = df.label.values
     talent_df['matched_job_id'] = talent_df.apply(lambda x: x.name if x['matched_job_id'] else -1, axis=1)
-    print(talent_df['matched_job_id'])
     job_df['job_id'] = job_df.index
     job_df['talent_or_job']= 'job'
     job_df['matched_talent_id'] = df.label.values
@@ -119,21 +115,15 @@ def transfer(df:pd.DataFrame, with_lable=True, **kwargs) -> pd.DataFrame:
     df = pd.concat([talent_df, job_df], ignore_index=True)
     df = df.fillna(-1)
     df = df.applymap(lambda x: int(x) if isinstance(x, bool) else x)
-    print(df.head())
-    print(df.columns)
+
     df.to_csv('model_matrix.csv', index=False)
     # be used as feature storage
     scaler = StandardScaler()
     columns_not_to_scale = ['talent_id', 'talent_or_job', 'matched_job_id',
        'job_id', 'matched_talent_id']
     columns_to_scale = [col for col in df.columns if col not in columns_not_to_scale]
-    print(columns_to_scale)
     scaled_columns = scaler.fit_transform(df[columns_to_scale])
-
-    # Convert the scaled columns back to a DataFrame
     scaled_df = pd.DataFrame(scaled_columns, columns=columns_to_scale, index=df.index)
-    
-    # Replace the original columns with the scaled columns
     df[columns_to_scale] = scaled_df
     
     # Save the fitted scaler to a file
@@ -144,6 +134,4 @@ def transfer(df:pd.DataFrame, with_lable=True, **kwargs) -> pd.DataFrame:
     df[columns_to_scale] = np.divide(df[columns_to_scale], np.linalg.norm(df[columns_to_scale], axis=1, keepdims=True))
     df.to_parquet('model_matrix.pq', index=False)
     
-
-       
     return df
